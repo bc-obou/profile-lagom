@@ -6,6 +6,7 @@ scalaVersion in ThisBuild := "2.12.8"
 
 val macwire = "com.softwaremill.macwire" %% "macros" % "2.3.0" % "provided"
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
+val automapper = "io.bfil" %% "automapper" % "0.6.1"
 
 lazy val `hello-world` = (project in file("."))
   .aggregate(`hello-world-api`, `hello-world-impl`)
@@ -25,6 +26,7 @@ lazy val `hello-world-impl` = (project in file("user-profile-impl"))
       lagomScaladslPersistenceCassandra,
       lagomScaladslKafkaBroker,
       lagomScaladslTestKit,
+      automapper,
       macwire,
       scalaTest
     )

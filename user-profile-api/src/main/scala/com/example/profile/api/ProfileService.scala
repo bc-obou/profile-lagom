@@ -2,7 +2,7 @@ package com.example.profile.api
 
 import java.time.ZonedDateTime
 
-import akka.NotUsed
+import akka.{Done, NotUsed}
 import com.lightbend.lagom.scaladsl.api.transport.Method
 import com.lightbend.lagom.scaladsl.api.{Descriptor, Service, ServiceCall}
 import play.api.libs.json.{Format, Json}
@@ -11,7 +11,7 @@ trait ProfileService extends Service {
 
   def getProfile(id: String): ServiceCall[NotUsed, Profile]
 
-  def createProfile(): ServiceCall[ProfileData, NotUsed]
+  def createProfile(): ServiceCall[ProfileData, Profile]
 
   def changeClaims(id: String, identityId: String, key: String): ServiceCall[ClaimsChanges, NotUsed]
 
@@ -38,9 +38,10 @@ object Formatters {
     *
     * This will be picked up by a Lagom implicit conversion from Play's JSON format to Lagom's message serializer.
     */
-  implicit val identity: Format[Identity] = Json.format[Identity]
   implicit val claims: Format[Claims] = Json.format[Claims]
   implicit val identityId: Format[IdentityId] = Json.format[IdentityId]
+  implicit val identity: Format[Identity] = Json.format[Identity]
+
   implicit val authentications: Format[Authentications] = Json.format[Authentications]
   implicit val authenticationLog: Format[AuthenticationLog] = Json.format[AuthenticationLog]
   implicit val profile: Format[Profile] = Json.format[Profile]
