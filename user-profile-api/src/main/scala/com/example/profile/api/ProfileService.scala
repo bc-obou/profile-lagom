@@ -2,10 +2,15 @@ package com.example.profile.api
 
 import java.time.ZonedDateTime
 
+import akka.util.ByteString
 import akka.{Done, NotUsed}
-import com.lightbend.lagom.scaladsl.api.transport.Method
+import com.lightbend.lagom.scaladsl.api.deser.MessageSerializer.{NegotiatedDeserializer, NegotiatedSerializer}
+import com.lightbend.lagom.scaladsl.api.deser.{MessageSerializer, StrictMessageSerializer}
+import com.lightbend.lagom.scaladsl.api.transport.{MessageProtocol, Method, NotAcceptable, UnsupportedMediaType}
 import com.lightbend.lagom.scaladsl.api.{Descriptor, Service, ServiceCall}
 import play.api.libs.json.{Format, Json}
+
+import scala.collection.immutable
 
 trait ProfileService extends Service {
 
@@ -17,6 +22,16 @@ trait ProfileService extends Service {
 
   def searchProfile(): ServiceCall[SearchProfile, ProfileSearch]
 
+  def getSwagger(): ServiceCall[NotUsed, String]
+
+  def getCss(): ServiceCall[NotUsed, String]
+
+  def getJsBundle(): ServiceCall[NotUsed, String]
+
+  def getJsPreset(): ServiceCall[NotUsed, String]
+
+  def getSwaggerJson(): ServiceCall[NotUsed, String]
+
 
   override final def descriptor: Descriptor = {
     import Formatters._
@@ -27,9 +42,133 @@ trait ProfileService extends Service {
         restCall(Method.GET, "/v1/profiles/:id", getProfile _),
         restCall(Method.POST, "/v1/profiles", createProfile _),
         restCall(Method.PATCH, "/v1/profiles/:id/identities/:identityId/:key/claims", changeClaims _),
-        restCall(Method.POST, "/v1/profiles/search", searchProfile _)
+        restCall(Method.POST, "/v1/profiles/search", searchProfile _),
+        restCall(Method.GET, "/v1/swagger", getSwagger _)(MessageSerializer.NotUsedMessageSerializer, MsgSer.HtmlMessageSerializer),
+        restCall(Method.GET, "/v1/swagger-ui.css", getCss _)(MessageSerializer.NotUsedMessageSerializer, MsgSer.CssMessageSerializer),
+        restCall(Method.GET, "/v1/swagger-ui-bundle.js", getJsBundle _)(MessageSerializer.NotUsedMessageSerializer, MsgSer.JsMessageSerializer),
+        restCall(Method.GET, "/v1/swagger-ui-standalone-preset.js", getJsPreset _)(MessageSerializer.NotUsedMessageSerializer, MsgSer.JsMessageSerializer),
+        restCall(Method.GET, "/v1/swagger/swagger.json", getSwaggerJson _)
       ).withAutoAcl(true)
   }
+
+  object MsgSer {
+    implicit val HtmlMessageSerializer: StrictMessageSerializer[String] = new StrictMessageSerializer[String] {
+      private val defaultProtocol = MessageProtocol(Some("text/html"), Some("utf-8"), None)
+      override val acceptResponseProtocols: immutable.Seq[MessageProtocol] = immutable.Seq(defaultProtocol)
+
+      private class StringSerializer(override val protocol: MessageProtocol) extends NegotiatedSerializer[String, ByteString] {
+        override def serialize(s: String) = ByteString.fromString(s, protocol.charset.getOrElse("utf-8"))
+      }
+
+      private class StringDeserializer(charset: String) extends NegotiatedDeserializer[String, ByteString] {
+        override def deserialize(wire: ByteString) = wire.decodeString(charset)
+      }
+
+      override val serializerForRequest: NegotiatedSerializer[String, ByteString] = new StringSerializer(defaultProtocol)
+
+      override def deserializer(protocol: MessageProtocol): NegotiatedDeserializer[String, ByteString] = {
+        if (protocol.contentType.forall(_ == "text/html")) {
+          new StringDeserializer(protocol.charset.getOrElse("utf-8"))
+        } else {
+          throw UnsupportedMediaType(protocol, defaultProtocol)
+        }
+      }
+
+      override def serializerForResponse(acceptedMessageProtocols: immutable.Seq[MessageProtocol]): NegotiatedSerializer[String, ByteString] = {
+        if (acceptedMessageProtocols.isEmpty) {
+          serializerForRequest
+        } else {
+          acceptedMessageProtocols.collectFirst {
+            case wildcardOrNone if wildcardOrNone.contentType.forall(ct => ct == "*" || ct == "*/*") =>
+              new StringSerializer(wildcardOrNone.withContentType("text/html"))
+            case textPlain if textPlain.contentType.contains("text/html") =>
+              new StringSerializer(textPlain)
+          } match {
+            case Some(serializer) => serializer
+            case None             => throw NotAcceptable(acceptedMessageProtocols, defaultProtocol)
+          }
+        }
+      }
+    }
+    implicit val CssMessageSerializer: StrictMessageSerializer[String] = new StrictMessageSerializer[String] {
+      private val defaultProtocol = MessageProtocol(Some("text/css"), None, None)
+      override val acceptResponseProtocols: immutable.Seq[MessageProtocol] = immutable.Seq(defaultProtocol)
+
+      private class StringSerializer(override val protocol: MessageProtocol) extends NegotiatedSerializer[String, ByteString] {
+        override def serialize(s: String) = ByteString.fromString(s, protocol.charset.getOrElse("utf-8"))
+      }
+
+      private class StringDeserializer(charset: String) extends NegotiatedDeserializer[String, ByteString] {
+        override def deserialize(wire: ByteString) = wire.decodeString(charset)
+      }
+
+      override val serializerForRequest: NegotiatedSerializer[String, ByteString] = new StringSerializer(defaultProtocol)
+
+      override def deserializer(protocol: MessageProtocol): NegotiatedDeserializer[String, ByteString] = {
+        if (protocol.contentType.forall(_ == "text/css")) {
+          new StringDeserializer(protocol.charset.getOrElse("utf-8"))
+        } else {
+          throw UnsupportedMediaType(protocol, defaultProtocol)
+        }
+      }
+
+      override def serializerForResponse(acceptedMessageProtocols: immutable.Seq[MessageProtocol]): NegotiatedSerializer[String, ByteString] = {
+        if (acceptedMessageProtocols.isEmpty) {
+          serializerForRequest
+        } else {
+          acceptedMessageProtocols.collectFirst {
+            case wildcardOrNone if wildcardOrNone.contentType.forall(ct => ct == "*" || ct == "*/*") =>
+              new StringSerializer(wildcardOrNone.withContentType("text/css"))
+            case textPlain if textPlain.contentType.contains("text/css") =>
+              new StringSerializer(textPlain)
+          } match {
+            case Some(serializer) => serializer
+            case None             => throw NotAcceptable(acceptedMessageProtocols, defaultProtocol)
+          }
+        }
+      }
+    }
+    implicit val JsMessageSerializer: StrictMessageSerializer[String] = new StrictMessageSerializer[String] {
+      private val defaultProtocol = MessageProtocol(Some("application/javascript"), Some("utf-8"), None)
+      override val acceptResponseProtocols: immutable.Seq[MessageProtocol] = immutable.Seq(defaultProtocol)
+
+      private class StringSerializer(override val protocol: MessageProtocol) extends NegotiatedSerializer[String, ByteString] {
+        override def serialize(s: String) = ByteString.fromString(s, protocol.charset.getOrElse("utf-8"))
+      }
+
+      private class StringDeserializer(charset: String) extends NegotiatedDeserializer[String, ByteString] {
+        override def deserialize(wire: ByteString) = wire.decodeString(charset)
+      }
+
+      override val serializerForRequest: NegotiatedSerializer[String, ByteString] = new StringSerializer(defaultProtocol)
+
+      override def deserializer(protocol: MessageProtocol): NegotiatedDeserializer[String, ByteString] = {
+        if (protocol.contentType.forall(_ == "application/javascript")) {
+          new StringDeserializer(protocol.charset.getOrElse("utf-8"))
+        } else {
+          throw UnsupportedMediaType(protocol, defaultProtocol)
+        }
+      }
+
+      override def serializerForResponse(acceptedMessageProtocols: immutable.Seq[MessageProtocol]): NegotiatedSerializer[String, ByteString] = {
+        if (acceptedMessageProtocols.isEmpty) {
+          serializerForRequest
+        } else {
+          acceptedMessageProtocols.collectFirst {
+            case wildcardOrNone if wildcardOrNone.contentType.forall(ct => ct == "*" || ct == "*/*") =>
+              new StringSerializer(wildcardOrNone.withContentType("application/javascript"))
+            case textPlain if textPlain.contentType.contains("application/javascript") =>
+              new StringSerializer(textPlain)
+          } match {
+            case Some(serializer) => serializer
+            case None             => throw NotAcceptable(acceptedMessageProtocols, defaultProtocol)
+          }
+        }
+      }
+    }
+  }
+
+
 }
 
 object Formatters {

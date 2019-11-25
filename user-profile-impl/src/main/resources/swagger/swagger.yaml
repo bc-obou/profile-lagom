@@ -1,0 +1,857 @@
+openapi: 3.0.0
+info:
+  version: 0.0.1
+  title: Havi user profile
+paths:
+  /profile:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - User Profile API
+      summary: Retrieve user's profile
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:sbt cl
+                $ref: "#/components/schemas/Profile"
+        "401":
+          description: Not Authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Profile not found
+        "500":
+          description: Internal server error
+  /profile/identities:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - User Profile API
+      summary: Retrieve user's identities
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Identity"
+        "401":
+          description: Not Authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Profile not found
+        "500":
+          description: Internal server error
+  /profile/authentications:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - User Profile API
+      summary: Retrive user's authentication logs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Authentications"
+        "401":
+          description: Not Authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Profile not found
+        "500":
+          description: Internal server error
+  /profile/job-assignments:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - User Profile API
+      summary: Retrive user's job assignments
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobAssignment'
+        "401":
+          description: Not Authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Profile not found
+        "500":
+          description: Internal server error
+  /profile/b2c-claims:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - User Profile API
+      summary: Retrives B2C claims for profile
+      responses:
+        "200":
+          description: OK. If profile does not exist than empty fields will be returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/B2CClaims'
+        "401":
+          description: Not authorized. The authentication token is missing. This status code is returned by Azure. If the application deployed without any proxy than the same status code will be returned by the application.
+        "500":
+          description: Internal server error
+  /profiles:
+    post:
+      tags:
+        - System Profile API
+      summary: Create profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileData"
+        description: Profile
+        required: true
+      responses:
+        "201":
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Profile already exist
+        "500":
+          description: Internal server error
+  /profiles/{profile-id}/identities:
+    post:
+      tags:
+        - System Profile API
+      summary: Add identity to the profile
+      parameters:
+        - name: profile-id
+          in: path
+          description: Profile ID
+          required: true
+          schema:
+            type: string
+            format: guid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityData"
+        description: Identity
+        required: true
+      responses:
+        "201":
+          description: Identity created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Identity"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Identity already exist
+        "422":
+          description: Identity associated with other profile
+        "500":
+          description: Internal server error
+    get:
+      tags:
+        - System Profile API
+      summary: Retrieve identities linked to the profile
+      parameters:
+        - name: profile-id
+          in: path
+          description: Profile ID
+          required: true
+          schema:
+            type: string
+            format: guid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Identity"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+  /profiles/{profile-id}/identities/{identity-id}/{key}/claims:
+    get:
+      tags:
+        - System Profile API
+      summary: Retrive claims from the identity
+      parameters:
+        - name: profile-id
+          in: path
+          description: Profile ID
+          required: true
+          schema:
+            type: string
+            format: guid
+        - name: identity-id
+          in: path
+          description: Identity provider ID
+          required: true
+          schema:
+            type: string
+        - name: key
+          in: path
+          description: Key that identifies user in given identity provider
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claims"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+    patch:
+      tags:
+        - System Profile API
+      summary: Partially updates claims inside the identity
+      parameters:
+        - name: profile-id
+          in: path
+          description: Profile ID
+          required: true
+          schema:
+            type: string
+            format: guid
+        - name: identity-id
+          in: path
+          description: Identity provider ID
+          required: true
+          schema:
+            type: string
+        - name: key
+          in: path
+          description: Key that identifies user in given identity provider
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimsChanges"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claims"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Profile not found
+        "500":
+          description: Internal server error
+  /profiles/{profile-id}/authentications:
+    get:
+      tags:
+        - System Profile API
+      summary: Retrieve authentication logs
+      parameters:
+        - name: profile-id
+          in: path
+          description: Profile ID
+          required: true
+          schema:
+            type: string
+            format: guid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Authentications"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+  /profiles/{profile-id}/authentications/{identity-id}/{key}:
+    post:
+      tags:
+        - System Profile API
+      summary: Create authentication for provider
+      parameters:
+        - name: profile-id
+          in: path
+          description: Profile ID
+          required: true
+          schema:
+            type: string
+            format: guid
+        - name: identity-id
+          in: path
+          description: Identity provider ID
+          required: true
+          schema:
+            type: string
+        - name: key
+          in: path
+          description: Key that identifies user in given identity provider
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthenticationLogData"
+        description: Authentication details
+        required: true
+      responses:
+        "201":
+          description: Authentication created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Authentications"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Profile not found
+        "500":
+          description: Internal server error
+  /profiles/{profile-id}/job-assignments:
+    post:
+      tags:
+        - System Profile API
+      summary: Create job assignment for profile
+      parameters:
+        - name: profile-id
+          in: path
+          description: Profile ID
+          required: true
+          schema:
+            type: string
+            format: guid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobAssignmentData'
+        description: Job assignment details
+        required: true
+      responses:
+        "201":
+          description: Job assignment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobAssignment'
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Profile not found
+        "409":
+          description: The given assignment exists
+        "422":
+          description: Request is invalid. It contains not existing values for fields like organizationId, licenseId and etc.
+        "500":
+          description: Internal server error
+    get:
+      tags:
+        - System Profile API
+      summary: Retrieve job assignments
+      parameters:
+        - name: profile-id
+          in: path
+          description: Profile ID
+          required: true
+          schema:
+            type: string
+            format: guid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobAssignment'
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+  /profiles/{profile-id}/job-assignments/{assignment-id}:
+    delete:
+      tags:
+        - System Profile API
+      summary: Remove job assignment
+      parameters:
+        - name: profile-id
+          in: path
+          description: Profile ID
+          required: true
+          schema:
+            type: string
+            format: guid
+        - name: assignment-id
+          in: path
+          description: Assignment ID
+          required: true
+          schema:
+            type: string
+            format: guid
+      responses:
+        "200":
+          description: Job assignment removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobAssignmentDeleted'
+        "404":
+          description: Profile or job assignment not found
+        "500":
+          description: Internal server error
+  /profiles/search:
+    post:
+      tags:
+        - System Profile API
+      summary: Search profile by identity attributes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileSearchData"
+        description: Search options
+        required: true
+      responses:
+        "201":
+          description: Search processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileSearch"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+servers:
+  - url: /v1
+  - url: /api/user-profile-api/v1
+components:
+  securitySchemes:
+    Bearer:
+      type: apiKey
+      name: Authorization
+      in: header
+  schemas:
+    IdentityData:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/IdentityId"
+        claims:
+          $ref: "#/components/schemas/Claims"
+    Identity:
+      type: object
+      required:
+        - id
+        - claims
+      properties:
+        id:
+          $ref: "#/components/schemas/IdentityId"
+        lastUsed:
+          type: boolean
+          example: true
+        claims:
+          $ref: "#/components/schemas/Claims"
+    IdentityId:
+      type: object
+      properties:
+        provider:
+          type: string
+          example: havi
+        key:
+          type: string
+          example: john.smith@havi.com
+    Claims:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+      properties:
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Smith
+        email:
+          type: string
+          example: john.smith@havi.com
+        phone:
+          type: string
+          example: "+123456789"
+    ClaimsChanges:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        email:
+          type: string
+          example: john.doe@havi.com
+        phone:
+          type: string
+          example: "+987654321"
+    Authentications:
+      type: object
+      required:
+        - identityId
+        - logs
+      properties:
+        identityId:
+          $ref: "#/components/schemas/IdentityId"
+        logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthenticationLog"
+    AuthenticationLogData:
+      type: object
+      required:
+        - time
+      properties:
+        time:
+          type: string
+          format: date-time
+          example: "2019-04-12T15:42:11.8098073Z"
+    AuthenticationLog:
+      type: object
+      required:
+        - time
+      properties:
+        time:
+          type: string
+          format: date-time
+          example: "2019-04-12T15:42:11.8098073Z"
+    ProfileData:
+      type: object
+      required:
+        - identity
+        - log
+      properties:
+        identityId:
+          $ref: "#/components/schemas/IdentityId"
+        claims:
+          $ref: "#/components/schemas/Claims"
+        log:
+          $ref: "#/components/schemas/AuthenticationLogData"
+    Profile:
+      type: object
+      required:
+        - id
+        - identities
+        - authentications
+        - jobAssignments
+      properties:
+        id:
+          type: string
+          format: guid
+          example: e5c58330-84db-4338-b540-c9c54b466d66
+        identities:
+          type: array
+          items:
+            $ref: "#/components/schemas/Identity"
+        authentications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Authentications"
+        jobAssignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobAssignment'
+    ProfileSearchData:
+      type: object
+      properties:
+        criteria:
+          $ref: "#/components/schemas/ProfileSearchCriteria"
+        shape:
+          $ref: "#/components/schemas/ProfileSearchShape"
+    ProfileSearchShape:
+      type: object
+      properties:
+        identities:
+          type: boolean
+          example: true
+        authentications:
+          type: boolean
+          example: true
+        jobAssignment:
+          type: boolean
+          example: true
+    ProfileSearchCriteria:
+      type: object
+      properties:
+        id:
+          type: string
+          format: guid
+          example: e5c58330-84db-4338-b540-c9c54b466d66
+        identityId:
+          $ref: "#/components/schemas/IdentityId"
+    ProfileSearch:
+      type: object
+      properties:
+        criteria:
+          $ref: "#/components/schemas/ProfileSearchCriteria"
+        shape:
+          $ref: "#/components/schemas/ProfileSearchShape"
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileSearchResult"
+    ProfileSearchResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: guid
+          example: e5c58330-84db-4338-b540-c9c54b466d66
+        identities:
+          type: array
+          items:
+            $ref: "#/components/schemas/Identity"
+        authentications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Authentications"
+        jobAssignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobAssignment'
+    Scope:
+      properties:
+        type:
+          type: string
+          example: category-manager
+        fields:
+          $ref: "#/components/schemas/OneOfScopeFields"
+    ScopeFields:
+      type: object
+    CategoryManagerScopeFields:
+      allOf:
+        - $ref: "#/components/schemas/ScopeFields"
+        - type: object
+          properties:
+            categories:
+              type: array
+              items:
+                type: string
+                example: beef
+            markets:
+              type: string
+              example: US
+          required:
+            - categories
+            - markets
+    PlatformAuthorizerScopeFields:
+      allOf:
+        - $ref: "#/components/schemas/ScopeFields"
+    UserSupportScopeFields:
+      allOf:
+        - $ref: "#/components/schemas/ScopeFields"
+    OneOfScopeFields:
+      type: object
+      oneOf:
+        - $ref: "#/components/schemas/CategoryManagerScopeFields"
+        - $ref: "#/components/schemas/UserSupportScopeFields"
+        - $ref: "#/components/schemas/PlatformAuthorizerScopeFields"
+      example:
+        categories: [Beef, Tomatoes]
+        markets: [US]
+    JobAssignmentData:
+      properties:
+        organizationId:
+          type: string
+          example: d5e5db07-0000-4687-836e-7687b888cdb2
+        licenseId:
+          type: string
+          example: d5e5db07-0000-4687-836e-7687b888cdb2
+        roleType:
+          type: string
+          example: category-manager
+        scope:
+          $ref: "#/components/schemas/Scope"
+      required:
+        - organizationId
+        - licenseId
+        - roleType
+        - scope
+    JobAssignment:
+      properties:
+        id:
+          type: string
+          example: d5e5db07-0000-4687-836e-7687b888cdb2
+        organization:
+          properties:
+            id:
+              type: string
+              example: d5e5db07-0000-4687-836e-7687b888cdb2
+            name:
+              type: string
+              example: The best organization
+          required:
+            - id
+            - name
+        license:
+          properties:
+            id:
+              type: string
+              example: d5e5db07-0000-4687-836e-7687b888cdb2
+            name:
+              type: string
+              example: The best license for the best company
+          required:
+            - id
+            - name
+        role:
+          properties:
+            type:
+              type: string
+              example: category-manager
+            name:
+              type: string
+              example: Category manager
+          required:
+            - type
+            - name
+        scope:
+          $ref: "#/components/schemas/Scope"
+      required:
+        - id
+        - organization
+        - license
+        - role
+        - scope
+    JobAssignmentDeleted:
+      type: object
+    B2CClaims:
+      type: object
+      properties:
+        profile-id:
+          type: string
+          example: d5e5db07-0000-4687-836e-7687b888cdb2
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/B2CRole"
+      example:
+        profileId: d5e5db07-0000-4687-836e-7687b888cdb2
+        roles:
+          category-manager: d5e5db07-0000-4687-836e-7687b888cdb2
+          platform-authorizer: d5e5db07-0000-4687-836e-7687b888cdb2
+          user-support: d5e5db07-0000-4687-836e-7687b888cdb2
+    B2CRole:
+      type: object
+      properties:
+        category-manager:
+          type: string
+          example: d5e5db07-0000-4687-836e-7687b888cdb2
+        platform-authorizer:
+          type: string
+          example: d5e5db07-0000-4687-836e-7687b888cdb2
+        user-support:
+          type: string
+          example: d5e5db07-0000-4687-836e-7687b888cdb2
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: error message

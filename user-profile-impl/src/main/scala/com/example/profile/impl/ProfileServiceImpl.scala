@@ -2,14 +2,21 @@ package com.example.profile.impl
 
 import java.util.UUID
 
+import akka.util.ByteString
 import akka.{Done, NotUsed}
 import com.example.profile.api.{Authentications, Claims, ClaimsChanges, Identity, IdentityId, Profile, ProfileData, ProfileSearch, ProfileSearchCriteria, ProfileSearchResult, ProfileService, SearchProfile}
 import com.lightbend.lagom.scaladsl.api.ServiceCall
+import com.lightbend.lagom.scaladsl.api.deser.{MessageSerializer, StrictMessageSerializer}
+import com.lightbend.lagom.scaladsl.api.deser.MessageSerializer.{NegotiatedDeserializer, NegotiatedSerializer}
+import com.lightbend.lagom.scaladsl.api.transport.{DeserializationException, MessageProtocol, ResponseHeader}
 import com.lightbend.lagom.scaladsl.persistence.{PersistentEntityRef, PersistentEntityRegistry}
+import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 import org.slf4j.LoggerFactory
 import io.bfil.automapper._
 
+import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Source
 import scala.util.{Failure, Success}
 
 /**
@@ -92,6 +99,26 @@ class ProfileServiceImpl(persistentEntityRegistry: PersistentEntityRegistry)(imp
     log.info("Search profile data {}", search)
     Future.successful(ProfileSearch(
       ProfileSearchCriteria(id = Some("1"), identityId = None), None, Vector.empty[ProfileSearchResult]))
+  }
+
+  override def getSwagger(): ServiceCall[NotUsed, String] = ServiceCall { _ =>
+        Future.successful(Source.fromResource("swagger/index.html").mkString)
+    }
+
+  override def getCss(): ServiceCall[NotUsed, String] = ServiceCall { _ =>
+    Future.successful(Source.fromResource("swagger/swagger-ui.css").mkString)
+  }
+
+  override def getJsBundle(): ServiceCall[NotUsed, String] = ServiceCall { _ =>
+    Future.successful(Source.fromResource("swagger/swagger-ui-bundle.js").mkString)
+  }
+
+  override def getJsPreset(): ServiceCall[NotUsed, String] = ServiceCall { _ =>
+    Future.successful(Source.fromResource("swagger/swagger-ui-standalone-preset.js").mkString)
+  }
+
+  override def getSwaggerJson(): ServiceCall[NotUsed, String] = ServiceCall { _ =>
+    Future.successful(Source.fromResource("swagger/swagger.yaml").mkString)
   }
 
 }
