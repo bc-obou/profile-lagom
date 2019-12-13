@@ -2,14 +2,20 @@ organization in ThisBuild := "com.example"
 version in ThisBuild := "1.0-SNAPSHOT"
 lagomCassandraEnabled in ThisBuild := false
 //lagomCassandraCleanOnStart in ThisBuild := true
-
-lagomUnmanagedServices in ThisBuild := Map("cas_native" -> "tcp://lagomapps.cassandra.cosmos.azure.com:10350")
+dependencyOverrides += "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.101"
+lagomUnmanagedServices in ThisBuild := Map("cas_native" -> "tcp://glo-platform-temp-c1p.cassandra.cosmos.azure.com:10350")
 //lagomUnmanagedServices in ThisBuild := Map("cas_native" -> "tcp://localhost:9042")
 // the Scala version that will be used for cross-compiled libraries
 scalaVersion in ThisBuild := "2.12.8"
 
 javaOptions in Production += "-Dlogger.resource=logback.prod.xml"
 javaOptions in Test += "-Dlogger.resource=logback.prod.xml"
+
+scalacOptions += "-Ypartial-unification"
+
+//libraryDependencies += "org.typelevel" %% "cats-core" % "2.0.0"
+
+val cassandra =  "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.101"
 
 val macwire = "com.softwaremill.macwire" %% "macros" % "2.3.0" % "provided"
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
@@ -29,10 +35,13 @@ lazy val `hello-world-api` = (project in file("user-profile-api"))
 lazy val `hello-world-impl` = (project in file("user-profile-impl"))
   .enablePlugins(LagomScala)
   .settings(
+    scalacOptions += "-Ypartial-unification",
     libraryDependencies ++= Seq(
       lagomScaladslPersistenceCassandra,
       lagomScaladslKafkaBroker,
       lagomScaladslTestKit,
+      cassandra,
+      "org.typelevel" %% "cats-core" % "2.0.0",
       automapper,
       macwire,
       scalaTest

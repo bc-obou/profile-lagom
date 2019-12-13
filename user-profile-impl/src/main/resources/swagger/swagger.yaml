@@ -15,7 +15,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema:sbt cl
+              schema:
                 $ref: "#/components/schemas/Profile"
         "401":
           description: Not Authorized
