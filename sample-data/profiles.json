@@ -1,0 +1,16 @@
+
+{
+"identityId": {
+"provider": "provider",
+"key": "bbb.aaa@ccc.com"
+},
+"claims": {
+"firstName": "Bbb",
+"lastName": "Aaa",
+"email": "bbb.aaa@ccc.com",
+"phone": "+300300033000"
+},
+"log": {
+"time": "2019-04-12T15:42:11.8098073+03:00[Europe/Minsk]"
+}
+}
